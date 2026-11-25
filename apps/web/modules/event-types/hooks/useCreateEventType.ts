@@ -1,4 +1,6 @@
 import { useState } from "react";
+
+import { redirectToHostBillingCheckout } from "../lib/hostBillingCheckout";
 import type { z } from "zod";
 
 import { createEventTypeInput } from "@calcom/features/eventtypes/lib/types";
@@ -32,6 +34,10 @@ export const useCreateEventType = (
       form.reset();
     },
     onError: (err) => {
+      if (err.data?.code === "PRECONDITION_FAILED" && err.message === "HOST_EVENT_PAYMENT_REQUIRED") {
+        void redirectToHostBillingCheckout().catch((error: Error) => onErrorMutation(error.message));
+        return;
+      }
       let error = err.message;
       if (err instanceof HttpError) {
         error = `${err.statusCode}: ${err.message}`;

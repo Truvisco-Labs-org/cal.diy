@@ -2,10 +2,10 @@
 
 import { useDebounce } from "@calcom/lib/hooks/useDebounce";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { showToast } from "@calcom/ui/components/toast";
 import { ShellMainAppDir } from "app/(use-page-wrapper)/(main-nav)/ShellMainAppDir";
 import type { ReactElement } from "react";
-import { useState } from "react";
-
+import { useEffect, useState } from "react";
 import EventTypes, { EventTypesCTA, SearchContext } from "~/event-types/views/event-types-listing-view";
 
 type GetUserEventGroupsResponse = Parameters<typeof EventTypesCTA>[0]["userEventGroupsData"];
@@ -29,6 +29,16 @@ export function EventTypesWrapper({
   } | null;
 }): ReactElement {
   const { t } = useLocale();
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const billingResult = url.searchParams.get("hostBilling");
+    if (billingResult === "success") showToast(t("host_billing_credit_ready"), "success");
+    if (billingResult === "cancelled") showToast(t("host_billing_checkout_cancelled"), "warning");
+    if (billingResult) {
+      url.searchParams.delete("hostBilling");
+      window.history.replaceState(null, "", url.toString());
+    }
+  }, [t]);
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 

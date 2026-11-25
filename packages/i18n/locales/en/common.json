@@ -1,4 +1,6 @@
 {
+  "host_billing_credit_ready": "Payment received. You can now create one additional event type.",
+  "host_billing_checkout_cancelled": "Payment cancelled. No event type was charged.",
   "apply_to_all": "Apply to all",
   "identity_provider": "Identity provider",
   "trial_days_left": "You have $t(day, {\"count\": {{days}} }) left on your pro trial",

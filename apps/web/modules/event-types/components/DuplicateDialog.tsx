@@ -22,6 +22,7 @@ import { Form } from "@calcom/ui/components/form";
 import { TextField } from "@calcom/ui/components/form";
 import { showToast } from "@calcom/ui/components/toast";
 import { revalidateEventTypesList } from "@calcom/web/app/(use-page-wrapper)/(main-nav)/event-types/actions";
+import { redirectToHostBillingCheckout } from "../lib/hostBillingCheckout";
 
 const querySchema = z.object({
   title: z.string().min(1),
@@ -90,6 +91,10 @@ const DuplicateDialog = () => {
       );
     },
     onError: (err) => {
+      if (err.data?.code === "PRECONDITION_FAILED" && err.message === "HOST_EVENT_PAYMENT_REQUIRED") {
+        void redirectToHostBillingCheckout().catch((error: Error) => showToast(error.message, "error"));
+        return;
+      }
       if (err instanceof HttpError) {
         const message = `${err.statusCode}: ${err.message}`;
         showToast(message, "error");
