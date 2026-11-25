@@ -421,6 +421,8 @@ model User {
   trialEndsAt         DateTime?
   lastActiveAt        DateTime?
   eventTypes          EventType[]          @relation("user_eventtype")
+  hostEventBilling    HostEventBilling?
+  hostEventPurchases  HostEventPurchase[]
   credentials         Credential[]
   teams               Membership[]
   bookings            Booking[]
@@ -2848,4 +2850,32 @@ model AttributeSyncFieldMapping {
 
   @@unique([integrationAttributeSyncId, attributeId])
   @@index([integrationAttributeSyncId])
+}
+
+// Cal.DIY host billing is separate from payments collected from booking guests.
+model HostEventBilling {
+  userId           Int      @id
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  freeCreationUsed Boolean  @default(false)
+  credits          Int      @default(0)
+  stripeCustomerId String?  @unique
+  updatedAt        DateTime @updatedAt
+}
+
+model HostEventPurchase {
+  id                      String    @id @default(cuid())
+  userId                  Int
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeCheckoutSessionId String    @unique
+  stripePaymentIntentId   String?   @unique
+  status                  String    @default("pending")
+  createdAt               DateTime  @default(now())
+  paidAt                  DateTime?
+
+  @@index([userId])
+}
+
+model HostEventRefund {
+  stripePaymentIntentId String   @id
+  createdAt             DateTime @default(now())
 }

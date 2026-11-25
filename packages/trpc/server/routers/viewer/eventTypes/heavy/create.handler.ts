@@ -1,6 +1,10 @@
 import { getDefaultLocations } from "@calcom/app-store/_utils/getDefaultLocations";
 import { DailyLocationType } from "@calcom/app-store/constants";
 import { EventTypeRepository } from "@calcom/features/eventtypes/repositories/eventTypeRepository";
+import {
+  createHostEventType,
+  HostEventPaymentRequiredError,
+} from "@calcom/features/eventtypes/lib/hostEventBilling";
 import type { PrismaClient } from "@calcom/prisma";
 import { Prisma } from "@calcom/prisma/client";
 import { MembershipRole, SchedulingType } from "@calcom/prisma/enums";
@@ -12,9 +16,15 @@ import type { TCreateInputSchema } from "./create.schema";
 
 class PermissionCheckService {
   constructor(_prisma?: unknown) {}
-  async checkPermission(..._args: unknown[]) { return true; }
-  async hasPermission(..._args: unknown[]) { return true; }
-  async getTeamIdsWithPermission(..._args: unknown[]): Promise<number[]> { return []; }
+  async checkPermission(..._args: unknown[]) {
+    return true;
+  }
+  async hasPermission(..._args: unknown[]) {
+    return true;
+  }
+  async getTeamIdsWithPermission(..._args: unknown[]): Promise<number[]> {
+    return [];
+  }
 }
 
 type EventTypeLocation = z.infer<typeof eventTypeLocations>[number];
@@ -150,12 +160,14 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
   const profile = ctx.user.profile;
   try {
     const eventTypeRepo = new EventTypeRepository(ctx.prisma);
-    const eventType = await eventTypeRepo.create({
-      ...data,
-      profileId: profile.id,
-    });
+    const eventType = await createHostEventType(ctx.prisma, userId, (transaction) =>
+      eventTypeRepo.create({ ...data, profileId: profile.id }, transaction)
+    );
     return { eventType };
   } catch (e) {
+    if (e instanceof HostEventPaymentRequiredError) {
+      throw new TRPCError({ code: "PRECONDITION_FAILED", message: e.message });
+    }
     console.warn(e);
     if (e instanceof Prisma.PrismaClientKnownRequestError) {
       if (e.code === "P2002" && Array.isArray(e.meta?.target) && e.meta?.target.includes("slug")) {

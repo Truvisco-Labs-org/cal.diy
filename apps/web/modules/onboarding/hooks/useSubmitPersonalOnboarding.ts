@@ -15,17 +15,6 @@ const DEFAULT_EVENT_TYPES = [
     slug: "15min",
     length: 15,
   },
-  {
-    title: "30min_meeting",
-    slug: "30min",
-    length: 30,
-  },
-  {
-    title: "secret_meeting",
-    slug: "secret",
-    length: 15,
-    hidden: true,
-  },
 ];
 
 export const useSubmitPersonalOnboarding = () => {
@@ -47,7 +36,6 @@ export const useSubmitPersonalOnboarding = () => {
                 title: t(event.title),
                 slug: event.slug,
                 length: event.length,
-                hidden: event.hidden,
               });
             })
           );

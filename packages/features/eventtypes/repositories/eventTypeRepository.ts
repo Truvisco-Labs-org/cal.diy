@@ -151,8 +151,8 @@ export class EventTypeRepository implements IEventTypesRepository {
     };
   };
 
-  async create(data: IEventType) {
-    return await this.prismaClient.eventType.create({
+  async create(data: IEventType, transaction?: Prisma.TransactionClient) {
+    return await (transaction ?? this.prismaClient).eventType.create({
       data: this.generateCreateEventTypeData(data),
       include: {
         calVideoSettings: true,

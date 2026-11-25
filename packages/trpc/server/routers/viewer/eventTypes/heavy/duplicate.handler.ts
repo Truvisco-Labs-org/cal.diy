@@ -1,4 +1,8 @@
 import { EventTypeRepository } from "@calcom/features/eventtypes/repositories/eventTypeRepository";
+import {
+  createHostEventType,
+  HostEventPaymentRequiredError,
+} from "@calcom/features/eventtypes/lib/hostEventBilling";
 import { generateHashedLink } from "@calcom/lib/generateHashedLink";
 import { CalVideoSettingsRepository } from "@calcom/features/calVideoSettings/repositories/CalVideoSettingsRepository";
 import { prisma } from "@calcom/prisma";
@@ -170,7 +174,9 @@ export const duplicateHandler = async ({ ctx, input }: DuplicateOptions) => {
     }
 
     const eventTypeRepo = new EventTypeRepository(prisma);
-    const newEventType = await eventTypeRepo.create(data);
+    const newEventType = await createHostEventType(prisma, ctx.user.id, (transaction) =>
+      eventTypeRepo.create(data, transaction)
+    );
 
     // Create custom inputs
     if (customInputs) {
@@ -222,15 +228,17 @@ export const duplicateHandler = async ({ ctx, input }: DuplicateOptions) => {
       eventType: newEventType,
     };
   } catch (error) {
+    if (error instanceof HostEventPaymentRequiredError) {
+      throw new TRPCError({ code: "PRECONDITION_FAILED", message: error.message });
+    }
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      
       if (Array.isArray(error.meta?.target) && error.meta?.target.includes("slug")) {
         throw new TRPCError({
           code: "CONFLICT",
           message: "duplicate_event_slug_conflict",
         });
       }
-      
+
       throw new TRPCError({
         code: "CONFLICT",
         message: "Unique constraint violation while creating a duplicate event.",
