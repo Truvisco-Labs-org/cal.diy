@@ -25,6 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const stripe = new Stripe(secretKey, { apiVersion: "2020-08-27" });
   const checkout = await stripe.checkout.sessions.create({
     mode: "payment",
+    payment_method_types: ["card"],
     customer_email: user.email,
     client_reference_id: String(user.id),
     metadata: { purpose: "host_event_type_credit" },
